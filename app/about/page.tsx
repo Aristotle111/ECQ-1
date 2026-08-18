@@ -59,6 +59,8 @@ const App = () => {
   const [showAudioOptions, setShowAudioOptions] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
 
+  const [showDiagram, setShowDiagram] = useState(false);
+
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
   const currentBufferRef = useRef<AudioBuffer | null>(null);
@@ -204,6 +206,7 @@ const App = () => {
   useEffect(() => {
     stopPlayback();
     setCurrentDynamicText(null);
+    setShowDiagram(false);
   }, [activeIndex, currentLanguage, difficulty]);
 
   const getReadableChunks = (): { text: string, lang: Language }[] => {
@@ -248,6 +251,7 @@ const App = () => {
 
   interface ContentItem {
     title?: Record<Language, string>;
+    diagramData?: { src: string; alt: Record<Language, string>; };
     scenarioData: Record<Difficulty, ScenarioTask>;
     dragDropData?: Record<Difficulty, Record<Language, DragDropTask>>;
     dynamicProblemData?: Record<Difficulty, Record<Language, DynamicProblemTask>>;
@@ -259,6 +263,13 @@ const App = () => {
       title: { 
         EN: "Binomial Probability Problem", 
         FR: "Problème de Probabilité Binomiale" 
+      },
+      diagramData: {
+        src: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 500 180' width='100%' height='100%'><defs><marker id='arrow-left' viewBox='0 0 10 10' refX='0' refY='5' markerWidth='6' markerHeight='6' orient='auto'><path d='M 10 0 L 0 5 L 10 10 z' fill='%23ffffff'/></marker><marker id='arrow-right' viewBox='0 0 10 10' refX='10' refY='5' markerWidth='6' markerHeight='6' orient='auto'><path d='M 0 0 L 10 5 L 0 10 z' fill='%23ffffff'/></marker></defs><g transform='translate(90, 80)'><circle cx='0' cy='0' r='26' fill='%2318181b' stroke='%23ffffff' stroke-width='2.5'/><line x1='-10' y1='0' x2='10' y2='0' stroke='%23ffffff' stroke-width='3' stroke-linecap='round'/><line x1='0' y1='-10' x2='0' y2='10' stroke='%23ffffff' stroke-width='3' stroke-linecap='round'/><text x='0' y='46' fill='%23a1a1aa' font-family='sans-serif' font-size='13' font-weight='600' text-anchor='middle'>+q₁</text></g><g transform='translate(410, 80)'><circle cx='0' cy='0' r='26' fill='%2318181b' stroke='%23ffffff' stroke-width='2.5'/><line x1='-10' y1='0' x2='10' y2='0' stroke='%23ffffff' stroke-width='3' stroke-linecap='round'/><text x='0' y='46' fill='%23a1a1aa' font-family='sans-serif' font-size='13' font-weight='600' text-anchor='middle'>-q₂</text></g><line x1='130' y1='80' x2='370' y2='80' stroke='%23ffffff' stroke-width='2' stroke-dasharray='4 4' marker-start='url(%23arrow-left)' marker-end='url(%23arrow-right)'/><rect x='235' y='62' width='30' height='36' fill='%2318181b' rx='6'/><text x='250' y='86' fill='%23ffffff' font-family='sans-serif' font-size='18' font-style='italic' font-weight='bold' text-anchor='middle'>r</text></svg>",
+        alt: {
+          EN: "Binomial probability distribution graph",
+          FR: "Graphique de distribution de probabilité binomiale"
+        }
       },
       scenarioData: {
         beginner: {
@@ -566,7 +577,6 @@ const App = () => {
                     
                     {/* Options Menu Dropdown */}
                     {showAudioOptions && (
-                      /* Menu opens inwards from the right edge */
                       <div className="absolute top-12 right-0 bg-zinc-900/95 border border-zinc-700/50 rounded-xl p-1.5 shadow-2xl backdrop-blur-md flex flex-col gap-1 min-w-[160px] animate-fade-in z-50">
                         <button onClick={handleRewind} className="flex items-center gap-3 px-3 py-2 text-sm text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors text-left">
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -664,6 +674,42 @@ const App = () => {
                   }
                 })()}
               </div>
+
+              {/* 4. Unified Collapsible Diagram Card */}
+              {currentProblem?.diagramData && (
+                <div className="w-full max-w-2xl mx-auto mt-4 bg-zinc-900/40 border border-zinc-800/80 rounded-2xl backdrop-blur-md shadow-xl overflow-hidden transition-all duration-300">
+                  {/* Card Header / Toggle Button */}
+                  <button
+                    onClick={() => setShowDiagram((prev) => !prev)}
+                    className={cn(
+                      "w-full py-3 px-5 flex items-center justify-center gap-2 text-sm font-medium text-zinc-300 hover:text-white hover:bg-zinc-800/40 transition-all duration-200 cursor-pointer",
+                      inter.className,
+                      showDiagram && "border-b border-zinc-800/80 bg-zinc-900/30"
+                    )}
+                  >
+                    <span>
+                      {currentLanguage === "EN" 
+                        ? (showDiagram ? "Hide Diagram" : "View Diagram") 
+                        : (showDiagram ? "Masquer le schéma" : "Voir le schéma")}
+                    </span>
+                    <span className="text-zinc-400 text-xs transition-transform duration-200">
+                      {showDiagram ? "▲" : "▼"}
+                    </span>
+                  </button>
+
+                  {/* Integrated Diagram Body */}
+                  {showDiagram && (
+                    <div className="p-6 md:p-8 flex items-center justify-center animate-fade-in">
+                      <img
+                        src={currentProblem.diagramData.src}
+                        alt={currentProblem.diagramData.alt[currentLanguage]}
+                        className="max-w-full h-auto max-h-[380px] object-contain rounded-lg"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
             </div>
           )}
         </div>
